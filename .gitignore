@@ -93,5 +93,6 @@ target/
 outputs
 /models
 /data
+!/data/raw/
 venv
 .venv.zip
