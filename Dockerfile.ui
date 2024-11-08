@@ -1,0 +1,45 @@
+#!/bin/bash
+###################################
+# MLOPS          #
+###################################
+
+FROM python:3.10-slim-buster
+#FROM --platform=linux/arm64/v8 python:3.10.13
+
+SHELL ["/bin/bash", "-c"]
+
+#RUN apt update && apt install -y liblapack3 libblas3 libpq-dev python-dev && apt -y clean
+WORKDIR /application
+
+COPY docker-requirements.txt /application/docker-requirements.txt
+
+#ADD .pypirc /home/.pypirc
+#ADD pip.conf /etc/pip.conf
+RUN pip3 install -U pip && pip3 install -r /application/docker-requirements.txt
+RUN pip3 install "fastapi[standard]" streamlit altair==4.0 uvicorn
+
+
+RUN apt-get update \
+    && apt-get -y update
+
+RUN apt-get -y install libgomp1
+
+
+# Create appuser
+RUN useradd -ms /bin/bash appuser
+
+ADD ./ /application
+
+
+RUN ls -laRt /application
+RUN chmod a+rwx -R /application
+
+USER appuser
+ENV PYTHONPATH=/application
+
+WORKDIR /application
+RUN ls /application
+
+EXPOSE 8080/tcp 
+
+CMD ["streamlit", "run", "/application/application/src/create_app.py" ,"--server.port=8080", "--server.enableWebsocketCompression=false","--server.enableCORS=false", "--server.headless=true"]
