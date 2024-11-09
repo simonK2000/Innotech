@@ -1,0 +1,1 @@
+carpeta neceseria para entrenar el modelo
