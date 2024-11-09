@@ -1,0 +1,96 @@
+#### Requisitos equipo
+=== Python3.10
+=== Docker Desktop
+=== Git
+
+########### ENTORNO VIRTUAL ############
+--> python -m venv .venv
+--> ./.venv/Scripts/activate
+! Comprobar entorno activado
+
+--> OR PYTHON CREATE ENVIRONMENT en VS
+
+########## REPOS ###########
+--> Creamos Github REPO
+
+En VSCODE
+creamos gitignore y añadimos .venv
+---> echo "# MLOps-e2e" >> README.md
+     git init
+     git add .
+     git commit -m "first commit"
+     git branch -M main
+     git remote add origin https://github.com/kirilmn13/MLOps-Innotech.git
+     git push -u origin main
+
+
+--> Nos vamos Dagshub y creamos repo a partir de Github, hay que dar permisos
+    --> ya estaría todo sicronizado entre repos
+
+
+######### REQS #############
+--> EN PRINCIPIO NO HACE FALTA(python.exe -m pip install --upgrade pip  || python -m pip install --upgrade pip==23.2)
+--> Copiamos dev-requirements.txt
+--> pip install -r dev-requirements.txt -U
+
+
+## una buena práctica sería aislar requierements para cada cosa
+# PUSH
+
+########## CONFIG DVC ######
+--> pip install dvc
+--> pip install dvc-s3
+--> creamos folder data mkdir data estructura y metemos datos
+--> dvc init
+--> dentro de data creamos gitignore con las carpetas que tiene que gestionar DVC
+--> dvc remote add origin s3://dvc
+--> dvc remote modify origin endpointurl https://dagshub.com/kirilmn13/MLOps-Innotech.s3
+--> dvc remote modify origin --local access_key_id e90bb58aed2b444b24a588dc01e9240810700ac2
+--> dvc remote modify origin --local secret_access_key e90bb58aed2b444b24a588dc01e9240810700ac2
+
+!!!DISCLAIMER!!!dvc push -r origin
+Hay que hacer los commits a git antes de DVC
+
+hay que añadir data a gitignore
+
+dvc add /data/raw/raw.csv
+dvc push -r origin
+
+dvc pull -r origin
+
+# PUSH
+
+
+########## PRE-COMMIT ######
+--> pip install pre-commit
+--> pre-commit install
+--> añadimos .pre-commit-config.yaml
+--> copiar config flake8 .flake8
+
+######### CONFIG HYDRA ########
+creamos carpeta config para gestionar hydra
+creamos main.yaml para configuracion principal
+
+creamos configs para modelos de hiperparámetros
+creamos configs para preprocesamiento elegir target y features
+todos estos configs estan enlazados al main
+desde el main se elige la del model y la del preprocces
+
+
+########## MFFLOW ######
+--> pip install mlflow
+-- cambiar tracking uri desde dagshb a config/main.yaml
+
+! esto esta ya en requierements
+--> pip install dagshub
+--> pip install hyperopt
+--> pip install shap
+--> pip install yellowbrick
+--> pip install pandera
+
+
+hay que añadir a config esto en main
+mlflow_tracking_ui: https://dagshub.com/kirilmn13/MLOps-e2e.mlflow
+mlflow_user: kirilmn13
+mlflow_api: e90bb58aed2b444b24a588dc01e9240810700ac2
+experiment: "MLOps-e2e"
