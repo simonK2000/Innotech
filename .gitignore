@@ -91,8 +91,8 @@ target/
 
 # Hydra logs
 outputs
-/models
-/data/*
-!/data/raw/
+# /models
+# /data/*
+# !/data/raw/
 venv
 .venv.zip

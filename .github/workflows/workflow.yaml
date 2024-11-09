@@ -1,0 +1,77 @@
+name: Test code and app
+on: 
+  - workflow_dispatch
+  - push
+
+jobs:
+  test_and_deploy_model:
+    name: Test processed code and deploy model
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Configuración del entorno
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.10
+          cache: pip
+
+      - name: Instalación de paquetes
+        run: pip install -r dev-requirements.txt
+
+      - name: Entrenamiento del modelo
+        run: python ./training/src/main.py
+
+      - name: Testeo del código procesado y modelo ML
+        run: pytest training/tests
+
+      - name: Creación local del servicio y testeo
+        run: |
+          python ./application/src/create_service.py &
+          sleep 10
+          pytest application/tests
+
+      - name: Aprobación manual del Workflow
+        uses: trstringer/manual-approval@v1.9.1
+        with:
+          secret: ${{ secrets.APPROVE_TOKEN }}
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          issue-title: "Checking training metrics and tests"
+          issue-body: "Please check the obtained scores and approve accordingly"
+          exclude-workflow-initiator-as-approver: false
+          additional-approved-words: ''
+          additional-denied-words: ''
+          
+      - name: Configuración de credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Amazon ECR "Login" Action para GitHub Actions
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2.0.1
+
+      #### Deploy API container ####
+      - name: Build API Docker Image
+        run: docker build -t my-test-api -f Dockerfile.api .
+
+      - name: Tag API Docker Image
+        run: docker tag my-test-api:latest ${{ steps.login-ecr.outputs.registry }}/mlops-innotech-api:${{ vars.TEAM_NAME }}
+
+      - name: Push API Docker Image a ECR
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/mlops-innotech-api:${{ vars.TEAM_NAME }}
+
+      #### Deploy UI container ####
+      - name: Build UI Docker Image
+        run: docker build -t my-test-ui -f Dockerfile.ui .
+
+      - name: Tag UI Docker Image
+        run: docker tag my-test-ui:latest ${{ steps.login-ecr.outputs.registry }}/mlops-innotech-ui:${{ vars.TEAM_NAME }}
+
+      - name: Push UI Docker Image a ECR
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/mlops-innotech-ui:${{ vars.TEAM_NAME }}
